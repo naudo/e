@@ -46,6 +46,15 @@ module.exports = {
      port: 7545,            // Standard Ethereum port (default: none)
      network_id: "*",       // Any network (default: none)
     },
+
+    ankrRopsten: {
+      provider: () => new HDWalletProvider(mnemonic, endpoint),
+      network_id: 3,
+      gas: 5500000,
+      confirmations: 2,
+      skipDryRun: true,
+      from: "0xe32688BD580997d6bBA7C4946bD2dBdaCd167Db4"
+    },  
     // Another network with more advanced options...
     // advanced: {
     // port: 8777,             // Custom port
