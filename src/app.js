@@ -3,26 +3,20 @@ const addRow = (id, title, cover, votes, canVote) => {
     canVote = true;
     element.innerHTML = `
     <tr>
-      <td class="px-6 py-4 whitespace-nowrap">
-        <div class="flex items-center">
-          <div class="flex-shrink-0">
-            <img class="h-24" src="${cover}" alt="Cover of ${title}">
-            </div>
-        </div>
-      </td>
+    
       <td class="px-6 py-4">${title}</td>
       <td class="px-6 py-4">${votes}</td>
       <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
         ${
           canVote
-          ? `<a data-id="${id}" href="#" class="btn-vote text-indigo-600 hover:text-indigo-900">Vote!</a>`
+          ? `<a data-id="${id}" data-action="yes" href="#" class="btn-vote text-indigo-600 hover:text-indigo-900">Yes!</a> <a data-id="${id}" data-action="no" href="#" class="btn-vote text-indigo-600 hover:text-indigo-900">No!</a>`
           : 'no votes left'
         }
       </td>
     </tr>
     `;
   
-    document.getElementById("movies").appendChild(element);
+    document.getElementById("questions").appendChild(element);
   }
 
   App = {
@@ -74,8 +68,8 @@ const addRow = (id, title, cover, votes, canVote) => {
 
   
     bindEvents: async function() {
-        const newMovieForm = document.getElementById('form-new-movie');
-        newMovieForm.addEventListener('submit', App.handleAddMovie);
+        const newQuestionForm = document.getElementById('form-new-question');
+        newQuestionForm.addEventListener('submit', App.handleAddQuestion);
     
         const voteButtons = document.getElementsByClassName('btn-vote');
         for(var i = 0; i < voteButtons.length; i++){
@@ -90,34 +84,41 @@ const addRow = (id, title, cover, votes, canVote) => {
             App.render();
         }).on('error', console.error);
     
-        instance.NewMovie({ fromBlock: 0 }).on('data', function(event){
-            console.log("new movie added");
+        instance.NewQuestion({ fromBlock: 0 }).on('data', function(event){
+            console.log("new Question added");
         }).on('error', console.error);
       },
   
       render: async function() {
-        document.getElementById("movies").innerHTML = "";
+        document.getElementById("questions").innerHTML = "";
     
         const instance = await App.contracts.Voting.deployed();
-        const moviesCount = (await instance.moviesCount.call()).toNumber();
+        const questionCount = (await instance.questionCount.call()).toNumber();
         const userVotes = (await instance.votes(App.account)).toNumber();
         const maxVotesPerUser = (await instance.MAX_VOTES_PER_VOTER.call()).toNumber();
     
-        for (let i = 1; i <= moviesCount; i++) {
-          const movie = await instance.movies.call(i);
-          const movieID = movie[0].toNumber();
-          const userCanVote = userVotes < maxVotesPerUser;
-    
+        for (let i = 1; i <= questionCount; i++) {
+          const question = await instance.questions.call(i);
+          const questionID = question[0].toNumber();
+        //   const userCanVote = userVotes < maxVotesPerUser;
+          const userCanVote = true;
+            console.log(question)
+            console.log(question["votes"].toNumber())
+            votes = question["votes"].toNumber();
+            yesVotes = question["votesYes"].toNumber();
+            noVotes = question["votesNo"].toNumber();
+
+
           addRow(
-            movieID,  // ID
-            movie[1].toString(),  // Title
-            movie[2].toString(),  // Cover
-            movie[3].toNumber(),  // Votes
-            userCanVote,
+            questionID,  // ID
+            question[1].toString(),  // Title
+            userCanVote, // make this more gamified / rate limit here
+            yesVotes + " / " + noVotes + " (" + votes + ")",
+
           );
     
           if (!userCanVote) {
-            document.getElementById("form-new-movie").remove()
+            document.getElementById("form-new-question").remove()
           }
         }
     
@@ -126,12 +127,20 @@ const addRow = (id, title, cover, votes, canVote) => {
   
       handleVote: function(event) {
         event.preventDefault();
-    
-        const movieID = parseInt(event.target.dataset.id);
+        console.log(event);
+        const questionID = parseInt(event.target.dataset.id);
+        const action = event.target.dataset.action;
+
+        actionInt = 0;
+        if (action == "yes") {
+            actionInt = 1;
+        } else {
+            actionInt = 0;
+        }
     
         App.contracts.Voting.deployed().then(function(instance) {
-          instance.vote(movieID, { from: App.account }).then(function(address) {
-            console.log(`Successfully voted on ${movieID}`, address);
+          instance.vote(questionID, actionInt, { from: App.account }).then(function(address) {
+            console.log(`Successfully voted on ${questionID}`, address);
           }).catch(function(err) {
             console.error(err);
           });
@@ -140,16 +149,16 @@ const addRow = (id, title, cover, votes, canVote) => {
         return false;
       },
     
-      handleAddMovie: function(event) {
+      handleAddQuestion: function(event) {
         event.preventDefault();
     
         const inputs = event.target.elements;
         const title = inputs['title'].value;
-        const cover = inputs['coverUrl'].value;
+        // const cover = inputs['coverUrl'].value;
     
         App.contracts.Voting.deployed().then(function(instance) {
-          instance.addMovie(title, cover, { from: App.account }).then(function() {
-            console.log(`Successfully added movie ${title}`);
+          instance.addQuestion(title, { from: App.account }).then(function() {
+            console.log(`Successfully added question ${title}`);
             event.target.reset();
           }).catch(function(err) {
             console.error(err);

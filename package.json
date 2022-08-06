@@ -1,7 +1,7 @@
 {
-  "name": "movie-vote",
-  "version": "1.0.0",
-  "description": "A tutorial for simple voting systems.",
+  "name": "omt.io",
+  "version": "0.0.1",
+  "description": "",
   "license": "MIT",
   "main": "truffle-config.js",
   "scripts": {
