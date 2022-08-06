@@ -95,19 +95,19 @@ const addRow = (id, title, cover, votes, canVote) => {
         const instance = await App.contracts.Voting.deployed();
         const questionCount = (await instance.questionCount.call()).toNumber();
         const userVotes = (await instance.votes(App.account)).toNumber();
+        const noVotes = (await instance.votesNo(App.account)).toNumber();
+        const yesVotes = (await instance.votesYes(App.account)).toNumber();
+
         const maxVotesPerUser = (await instance.MAX_VOTES_PER_VOTER.call()).toNumber();
     
         for (let i = 1; i <= questionCount; i++) {
           const question = await instance.questions.call(i);
           const questionID = question[0].toNumber();
-        //   const userCanVote = userVotes < maxVotesPerUser;
+         // const userCanVote = userVotes < maxVotesPerUser;
           const userCanVote = true;
             console.log(question)
             console.log(question["votes"].toNumber())
             votes = question["votes"].toNumber();
-            yesVotes = question["votesYes"].toNumber();
-            noVotes = question["votesNo"].toNumber();
-
 
           addRow(
             questionID,  // ID
@@ -130,12 +130,12 @@ const addRow = (id, title, cover, votes, canVote) => {
         console.log(event);
         const questionID = parseInt(event.target.dataset.id);
         const action = event.target.dataset.action;
-
+        console.log(action)
         actionInt = 0;
         if (action == "yes") {
-            actionInt = 1;
-        } else {
             actionInt = 0;
+        } else {
+            actionInt = 1;
         }
     
         App.contracts.Voting.deployed().then(function(instance) {
